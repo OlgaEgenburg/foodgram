@@ -1,0 +1,15 @@
+from django.contrib.auth import get_user_model
+from rest_framework import viewsets
+from users.serializers import (AuthSerializer, UserSingupSerializer, UserSerializer)
+
+User = get_user_model()
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return UserSerializer
+        return UserSingupSerializer
