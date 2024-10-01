@@ -76,7 +76,5 @@ class Recipe(models.Model):
     text = models.TextField()
     cooking_time = models.SmallIntegerField('Время приготовления')
 
-    REQUIRED_FIELDS = ('ingridients', 'tags', 'name', 'text', 'cooking_time')
-
     def __str__(self):
         return self.name

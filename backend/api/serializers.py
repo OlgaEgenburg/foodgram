@@ -31,12 +31,14 @@ class RecipeSafeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RecipeUnSafeSerializer(serializers.ModelSerializer):
-    author = UserSerializer()
     tags = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     ingredients = IngridientSerializer(many=True)
     class Meta:
         model = Recipe
-        fields = '__all__'
+        fields = ('name', 'ingredients', 'tags', 'image', 'text', 'cooking_time')
+
+    def to_representation(self, instance):
+        return RecipeSafeSerializer(instance).data
 
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:

@@ -4,6 +4,9 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import CustomUser 
 
-# Не добавляем поля через UserAdmin.fieldsets,
-# а сразу регистрируем модель в админке:
-admin.site.register(CustomUser, UserAdmin)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'email')
+    empty_value_display = '-пусто-'
+
+admin.site.register(CustomUser, CustomUserAdmin)

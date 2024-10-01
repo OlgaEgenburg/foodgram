@@ -16,6 +16,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return RecipeSafeSerializer
         return RecipeUnSafeSerializer
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
