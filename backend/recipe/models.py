@@ -9,11 +9,17 @@ class Tag(models.Model):
     name = models.CharField('Название', max_length=MAX_LENGTH_SHORT)
     slug = models.SlugField(
         'Идентификатор', max_length=MAX_LENGTH_SHORT, unique=True)
+    
+    def __str__(self):
+        return self.name
 
 
 class Ingridient(models.Model):
     name = models.CharField('Название игридиента', max_length=MAX_LENGTH_NAME_ING)
     measurement_unit = models.CharField('Название', max_length=MAX_LENGTH_MEASUREMENT)  
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeTag(models.Model):
@@ -71,3 +77,6 @@ class Recipe(models.Model):
     cooking_time = models.SmallIntegerField('Время приготовления')
 
     REQUIRED_FIELDS = ('ingridients', 'tags', 'name', 'text', 'cooking_time')
+
+    def __str__(self):
+        return self.name
