@@ -14,7 +14,7 @@ class Tag(models.Model):
         return self.name
 
 
-class Ingridient(models.Model):
+class Ingredient(models.Model):
     name = models.CharField('Название игридиента', max_length=MAX_LENGTH_NAME_ING)
     measurement_unit = models.CharField('Название', max_length=MAX_LENGTH_MEASUREMENT)  
 
@@ -44,7 +44,7 @@ class RecipeIngridient(models.Model):
         on_delete=models.CASCADE,
     )
     ingridient_id = models.ForeignKey(
-        Ingridient,
+        Ingredient,
         blank=False,
         null=False,
         on_delete=models.CASCADE,
@@ -64,14 +64,14 @@ class Recipe(models.Model):
         blank=False,
         verbose_name='Тэги',
     )
-    ingridients = models.ManyToManyField(
-        Ingridient,
+    ingredients = models.ManyToManyField(
+        Ingredient,
         through=RecipeIngridient,
         blank=False,
         verbose_name='Ингридиенты',
     )
-    is_favorited = models.BooleanField()
-    is_in_shopping_cart = models.BooleanField()
+    is_favorited = models.BooleanField(default=False)
+    is_in_shopping_cart = models.BooleanField(default=False)
     image = models.ImageField('Фото', upload_to='recipe_images', blank=True)
     text = models.TextField()
     cooking_time = models.SmallIntegerField('Время приготовления')
