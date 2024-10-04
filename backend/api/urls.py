@@ -11,7 +11,7 @@ router_v1.register('ingredients', IngridientViewSet, basename='genres')
 router_v1.register('recipes/download_shopping_cart', IngridientViewSet, basename='download_cart')
 router_v1.register('users/subscriptions', IngridientViewSet, basename='subscription')
 #router_v1.register('users/me/avatar', AvatarViewSet, basename='avatar')
-router_v1.register(r'recipes/(?P<recipe_id>\d+)/favorite',FavoriteViewSet, basename='favorite')
+router_v1.register(r'recipes/(?P<recipe_id>\d+)/favorite', FavoriteViewSet, basename='favorite')
 
 urlpatterns = [
     path('', include(router_v1.urls)),

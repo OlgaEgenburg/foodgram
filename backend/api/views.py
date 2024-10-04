@@ -3,19 +3,22 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from api.serializers import (FavoriteSerializer, TagSerializer,
-                             IngridientSerializer, RecipeSafeSerializer, RecipeUnSafeSerializer)
-from recipe.models import Ingredient, Tag, Recipe
+                             IngridientSerializer, RecipeSafeSerializer, RecipeUnSafeSerializer, FavoritePostSerializer)
+from recipe.models import Ingredient, Tag, Recipe, RecipeUser
 from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
 from recipe.filters import RecipeFilter
 from users.models import CustomUser
 from users.serializers import AvatarSerializer
 from .mixin import AllowPUTAsCreateMixin, AllowPUTAsCreateMixin
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
@@ -41,15 +44,24 @@ class TagViewSet(viewsets.ModelViewSet):
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
-    queryset = Tag.objects.all()
+    queryset = Recipe.objects.all()
     http_method_names = ['post', 'delete']
     serializer_class = FavoriteSerializer
 
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return FavoriteSerializer
+        return FavoritePostSerializer
+
     def get_recipe(self):
         return get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
+    
+    def retrieve(self, request, pk=None):
+        queryset = self.get_recipe()
+        return queryset
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, recipe=self.get_recipe())
+        serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())
 
 
 

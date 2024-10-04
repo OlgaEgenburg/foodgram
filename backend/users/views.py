@@ -4,6 +4,7 @@ from users.models import CustomUser
 from users.serializers import (AvatarSerializer, UserSingupSerializer, UserSerializer)
 from api.permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
 
+
 User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
