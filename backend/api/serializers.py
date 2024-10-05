@@ -167,3 +167,6 @@ class FavoritePostSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return FavoriteSerializer(instance).data
+    
+
+

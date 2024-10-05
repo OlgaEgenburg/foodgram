@@ -19,3 +19,12 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'password')
 
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name='follower')
+    following = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name='following')
+    
+    class Meta:
+        unique_together = ('user', 'following',)

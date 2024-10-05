@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from users.models import CustomUser
+from users.models import CustomUser, Follow
 import base64
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer as BaseUserSerializer, UserCreateSerializer as BaseUserCreateSerializer
+from rest_framework.relations import SlugRelatedField
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -51,4 +52,39 @@ class AvatarSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = (
             'avatar',
+        )
+
+    def update(self, instance, validated_data):
+        print(validated_data)
+        instance.avatar = validated_data.get('avatar', instance.avatar)
+        instance.save()
+        return instance
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        model = Follow
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=Follow.objects.all(), fields=['user', 'following']
+            )
+        ]
+        optional_fields = ['user', ]
+        extra_kwargs = {
+            'user': {'read_only': True, 'required': False},
+            'following': {'read_only': True},
+        } 
+
+    def validate_following(self, value):
+        """The validator for the 'following' field."""
+        if value == self.context['request'].user:
+            raise serializers.ValidationError('You can not follow yourself.')
+        return value
+    
+class FollowGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'id', 'username', 'email', 'first_name', 'last_name', 'is_subscribed', 'avatar', 
         )
