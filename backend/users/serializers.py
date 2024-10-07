@@ -55,7 +55,6 @@ class AvatarSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
-        print(validated_data)
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance

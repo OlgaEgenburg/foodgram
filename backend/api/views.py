@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from api.serializers import (FavoriteSerializer, TagSerializer,
-                             IngridientSerializer, RecipeSafeSerializer, RecipeUnSafeSerializer, FavoritePostSerializer)
+                             IngridientSerializer, RecipeSafeSerializer, ShortLinkSerializer, RecipeUnSafeSerializer, FavoritePostSerializer)
 from users.serializers import FollowSerializer, FollowGetSerializer
 from recipe.models import Ingredient, Tag, Recipe, RecipeUser
 from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
@@ -14,6 +14,7 @@ from .mixin import AllowPUTAsCreateMixin, AllowPUTAsCreateMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.pagination import LimitOffsetPagination
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -21,7 +22,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     filterset_class = RecipeFilter
-    #filterset_fields = ('author', 'tags') 
+    pagination_class = LimitOffsetPagination
+    filterset_fields = ('author', 'tags') 
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -112,6 +114,16 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username',)
+    http_method_names = ['get',]
+
+    def get_queryset(self, **kwargs):
+        return self.queryset.filter(user=self.request.user)
+    
+
+class ShortLinkViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = ShortLinkSerializer
+    permission_classes = (AllowAny, )
     http_method_names = ['get',]
 
     def get_queryset(self, **kwargs):

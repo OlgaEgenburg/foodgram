@@ -128,6 +128,10 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         ing_list = []
         tag_list = []
+        if 'tags' not in self.initial_data:
+            raise serializers.ValidationError("Tag is nessecery")
+        if 'ingredients' not in self.initial_data:
+            raise serializers.ValidationError("Ingredients are nessecery")
         for tag in (self.initial_data['tags']):
             if tag in tag_list:
                 raise serializers.ValidationError("ingredient already in list")
@@ -191,5 +195,17 @@ class FavoritePostSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return FavoriteSerializer(instance).data
     
+
+class ShortLinkSerializer(serializers.ModelSerializer):
+    shortlink = serializers.SerializerMethodField()
+    class Meta:
+        model = Recipe
+        fields = ('shortlink',)
+
+    def get_shortlink(self, obj):
+        return obj.ingridient_id.name
+
+
+
 
 
