@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SHORT, MAX_LENGTH_NAME_ING, MAX_LENGTH_MEASUREMENT) 
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -55,6 +56,7 @@ class RecipeIngridient(models.Model):
     amount = models.SmallIntegerField()
 
 
+
 class RecipeUser(models.Model):
     recipe_id = models.ForeignKey(
         'Recipe',
@@ -103,3 +105,9 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def validate_ingredients(value):
+        print(value)
+        if not len(value.ingridient_id) == 0:
+            raise ValidationError(
+            f'Год выпуска не может быть позднее {year_today}.')

@@ -22,8 +22,8 @@ class IngridientSerializer(serializers.ModelSerializer):
 
 
 class IngridientPostSerializer(serializers.ModelSerializer):
-    amount = serializers.IntegerField(default=None)
-    id = serializers.CharField(source='ingridient_id')
+    amount = serializers.IntegerField(default=None,)
+    id = serializers.CharField(source='ingridient_id', required=True)
 
     class Meta:
         model = RecipeIngridient
@@ -84,8 +84,8 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('name', 'ingredients', 'tags', 'image', 'text', 'cooking_time')
         extra_kwargs = {
-            'ingredients': {'required': True},
-            'tags': {'required': True}
+            'ingredients': {'required': True, 'allow_empty': False},
+            'tags': {'required': True, 'allow_empty': False}
             } 
         
     def to_representation(self, instance):
@@ -124,6 +124,29 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
         instance.ingredients.amount = 1
         instance.save()
         return instance
+    
+    def validate(self, data):
+        ing_list = []
+        tag_list = []
+        for tag in (self.initial_data['tags']):
+            if tag in tag_list:
+                raise serializers.ValidationError("ingredient already in list")
+            tag_list.append(tag)
+        if len(self.initial_data['tags']) == 0:
+            raise serializers.ValidationError("No permission added for a ingridient")
+        if len(self.initial_data['ingredients']) == 0:
+            raise serializers.ValidationError("!!!!No permission added for a ingridient1")
+        for ingridient in self.initial_data['ingredients']:
+            if not Ingredient.objects.filter(id=(ingridient['id'])):
+                raise serializers.ValidationError("There is no ingridient in data")
+            if (ingridient['id']) < 1:
+                raise serializers.ValidationError("No permission added for a ingridient")
+            if (ingridient['amount']) < 1:
+                raise serializers.ValidationError("Not enough for cooking")
+            if (ingridient['id']) in ing_list:
+                raise serializers.ValidationError("ingredient already in list")
+            ing_list.append(ingridient['id'])
+        return data
     
 
 
