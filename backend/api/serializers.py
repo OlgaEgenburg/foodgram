@@ -1,7 +1,7 @@
 
 import base64
 from rest_framework import serializers
-from recipe.models import Ingredient, Tag, Recipe, RecipeIngridient, RecipeTag, RecipeUser
+from recipe.models import Ingredient, Tag, Recipe, RecipeIngridient, RecipeTag, RecipeUser, ShoppingList
 from users.serializers import UserSerializer
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
@@ -192,9 +192,24 @@ class FavoritePostSerializer(serializers.ModelSerializer):
             'recipe_id': {'read_only': True},
         }
 
+
     def to_representation(self, instance):
         return FavoriteSerializer(instance).data
     
+
+class ShoppingListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingList
+        fields = ('user_id', 'recipe_id',)
+        extra_kwargs = {
+            'user_id': {'read_only': True},
+            'recipe_id': {'read_only': True},
+        }
+
+    def to_representation(self, instance):
+        return FavoriteSerializer(instance).data
+    
+
 
 class ShortLinkSerializer(serializers.ModelSerializer):
     shortlink = serializers.SerializerMethodField()

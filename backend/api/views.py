@@ -1,11 +1,13 @@
 from rest_framework import filters, viewsets
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-
+from rest_framework import generics
+from django.http import HttpResponse
+from wsgiref.util import FileWrapper
 from api.serializers import (FavoriteSerializer, TagSerializer,
-                             IngridientSerializer, RecipeSafeSerializer, ShortLinkSerializer, RecipeUnSafeSerializer, FavoritePostSerializer)
+                             IngridientSerializer, RecipeSafeSerializer, ShortLinkSerializer, RecipeUnSafeSerializer, FavoritePostSerializer, ShoppingListSerializer)
 from users.serializers import FollowSerializer, FollowGetSerializer
-from recipe.models import Ingredient, Tag, Recipe, RecipeUser
+from recipe.models import Ingredient, Tag, Recipe, RecipeUser, ShoppingList
 from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
 from recipe.filters import RecipeFilter
 from users.models import CustomUser, Follow
@@ -15,6 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import LimitOffsetPagination
+from django.core.exceptions import ValidationError
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -35,8 +38,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class TagViewSet(viewsets.ModelViewSet):
-    #search_fields = ('name',)
-    #lookup_field = 'slug'
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
@@ -82,7 +83,7 @@ class IngridientViewSet(viewsets.ModelViewSet):
 class AvatarViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = AvatarSerializer
-    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticated, )
     http_method_names = ['put', 'delete']
     lookup_fields = ['avatar', ]
     
@@ -92,16 +93,23 @@ class AvatarViewSet(viewsets.ModelViewSet):
 
 
 class FollowViewSet(viewsets.ModelViewSet):
-    queryset = Follow.objects.all()
-    serializer_class = FollowSerializer
+    queryset = CustomUser.objects.all()
     permission_classes = (IsAuthenticated, )
     http_method_names = ['get', 'post', 'delete']
 
-    def get_queryset(self, **kwargs):
-        return self.queryset.filter(user=self.request.user)
+    def get_following(self, **kwargs):
+        return get_object_or_404(CustomUser, id=self.kwargs.get('user_id'))
+    
+    def retrieve(self, request, pk=None):
+        #queryset = self.get_following()
+        #return queryset
+        queryset = CustomUser.objects.all()
+        user = get_object_or_404(queryset, id=self.kwargs.get('user_id'))
+        serializer = FollowGetSerializer(user)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(user=self.request.user, following=self.get_following())
     
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -109,16 +117,49 @@ class FollowViewSet(viewsets.ModelViewSet):
         return FollowSerializer
     
 class SubscriptionViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
+    queryset = Follow.objects.all()
     serializer_class = FollowGetSerializer
     permission_classes = (AllowAny, )
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('following__username',)
     http_method_names = ['get',]
 
     def get_queryset(self, **kwargs):
-        return self.queryset.filter(user=self.request.user)
+        print("hi")
+        data = self.queryset.filter(user_id=self.request.user)
+        print(data)
+        return data
     
+    def retrieve(self, request, pk=None):
+        queryset = Follow.objects.all()
+        user = get_object_or_404(queryset, user_id=self.request.user)
+        serializer = FollowGetSerializer(user)
+        return Response(serializer.data)
+    
+
+class ShoppingListViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    permission_classes = (IsAuthenticated, )
+    http_method_names = ['post', 'delete']
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return FavoriteSerializer
+        return ShoppingListSerializer
+
+    def get_recipe(self):
+        recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
+        print(recipe)
+        if ShoppingList.objects.filter(recipe_id__name=recipe):
+            raise ValidationError("Recipe already in list")
+        else:
+            return recipe
+    
+    def retrieve(self, request, pk=None):
+        queryset = self.get_recipe()
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())
+
 
 class ShortLinkViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -128,3 +169,14 @@ class ShortLinkViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self, **kwargs):
         return self.queryset.filter(user=self.request.user)
+
+
+class DownloadCartAPIView(generics.ListAPIView):
+    def get(self, request, id, format=None):
+        queryset = ShoppingList.objects.get(user_id=self.request.user)
+        print(queryset)
+        file_handle = queryset.file.path
+        document = open(file_handle, 'rb')
+        response = HttpResponse(FileWrapper(document), content_type='application/msword')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % queryset.file.name
+        return response

@@ -61,29 +61,38 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    following = UserSerializer(required=False)
+
     class Meta:
-        fields = '__all__'
+        fields = ('user', 'following')
         model = Follow
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=Follow.objects.all(), fields=['user', 'following']
-            )
-        ]
-        optional_fields = ['user', ]
+        #validators = [
+            #serializers.UniqueTogetherValidator(
+                #queryset=Follow.objects.all(), fields=['user', 'following']
+            #)
+        #]
+        #optional_fields = ['user', ]
         extra_kwargs = {
-            'user': {'read_only': True, 'required': False},
-            'following': {'read_only': True},
+            'user': {'write_only': True, 'required': False},
+            'following': { 'required': False},
         } 
 
-    def validate_following(self, value):
-        """The validator for the 'following' field."""
-        if value == self.context['request'].user:
-            raise serializers.ValidationError('You can not follow yourself.')
-        return value
+    #def validate_following(self, value):
+       # """The validator for the 'following' field."""
+       # if value == self.context['request'].user:
+        #   raise serializers.ValidationError('You can not follow yourself.')
+        #return value
+    
+    def to_representation(self, instance):
+        return FollowGetSerializer(instance).data
     
 class FollowGetSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
+        model = Follow
         fields = (
-            'id', 'username', 'email', 'first_name', 'last_name', 'is_subscribed', 'avatar', 
+            'id', 'username', 'email', 'last_name', 'is_subscribed', 'avatar'
         )
+        extra_kwargs = {
+            'id': {'read_only': True, 'required': False},
+            'username': {'read_only': True, 'required': False},
+        } 

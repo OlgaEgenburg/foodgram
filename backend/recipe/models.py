@@ -77,6 +77,23 @@ class RecipeUser(models.Model):
         unique_together = ('user_id', 'recipe_id',)
 
 
+class ShoppingList(models.Model):
+    recipe_id = models.ForeignKey(
+        'Recipe',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='recipe_list'
+    )
+    user_id = models.ForeignKey(
+        User,
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='list_of_user'
+    )
+
+
 class Recipe(models.Model):
     name = models.CharField('Название блюда',
                             max_length=MAX_LENGTH_NAME)
