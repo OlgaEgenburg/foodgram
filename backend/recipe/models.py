@@ -73,9 +73,6 @@ class RecipeUser(models.Model):
         related_name='user'
     )
 
-    class Meta:
-        unique_together = ('user_id', 'recipe_id',)
-
 
 class ShoppingList(models.Model):
     recipe_id = models.ForeignKey(

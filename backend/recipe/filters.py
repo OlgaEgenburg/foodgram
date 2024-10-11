@@ -11,8 +11,8 @@ class RecipeFilter(rest_framework.FilterSet):
         to_field_name='slug',
         queryset=Tag.objects.all()
     )
-    is_in_shopping_cart = rest_framework.CharFilter(field_name='is_in_shopping_cart')
-    is_favorited = rest_framework.CharFilter(field_name='is_favorited')
+    is_in_shopping_cart = rest_framework.BooleanFilter(field_name='is_in_shopping_cart')
+    is_favorited = rest_framework.BooleanFilter(field_name='is_favorited')
 
     class Meta:
         fields = ('author', 'tags', 'is_in_shopping_cart', 'is_favorited')

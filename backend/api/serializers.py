@@ -2,9 +2,11 @@
 import base64
 from rest_framework import serializers
 from recipe.models import Ingredient, Tag, Recipe, RecipeIngridient, RecipeTag, RecipeUser, ShoppingList
-from users.serializers import UserSerializer
+#from users.serializers import UserSerializer
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
+from users import models as user_models
+
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -63,6 +65,14 @@ class Base64ImageField(serializers.ImageField):
 
         return super().to_internal_value(data)
 
+class UserSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True, allow_null=True)
+
+    class Meta:
+        model = user_models.CustomUser
+        fields = (
+            'id', 'username', 'email', 'first_name', 'last_name', 'is_subscribed', 'avatar'
+        )
 
 class RecipeSafeSerializer(serializers.ModelSerializer):
     author = UserSerializer()
@@ -192,6 +202,16 @@ class FavoritePostSerializer(serializers.ModelSerializer):
             'recipe_id': {'read_only': True},
         }
 
+    def create(self, validated_data):
+        print(validated_data)
+        user = validated_data.pop('user_id')
+        recipe = validated_data.pop('recipe_id')
+        print(user)
+        print(recipe)
+        if RecipeUser.objects.filter(user_id=user, recipe_id=recipe):
+            raise serializers.ValidationError('You can add againg.')
+        follow = RecipeUser.objects.create(user_id=user, recipe_id=recipe)
+        return follow
 
     def to_representation(self, instance):
         return FavoriteSerializer(instance).data
@@ -208,6 +228,10 @@ class ShoppingListSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return FavoriteSerializer(instance).data
+    
+    def validate(self, data):
+        print(data)
+        return data
     
 
 
