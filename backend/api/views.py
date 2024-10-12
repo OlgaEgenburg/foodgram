@@ -1,4 +1,4 @@
-from rest_framework import filters, viewsets
+from rest_framework import filters, viewsets, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
@@ -22,6 +22,7 @@ from users import models as user_models
 from users.serializers import  UserSingupSerializer
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 
 
 class UserViewSet(UserViewSet):
@@ -60,15 +61,15 @@ class UserViewSet(UserViewSet):
 
     @action(detail=False, methods=['get',], url_path='subscriptions')
     def subscriptions(self, request):
-        #queryset = list(Follow.objects.filter(user_id=self.request.user.id).values_list('following_id', flat=True))
-        print(self.request.user.id)
         queryset = Follow.objects.filter(user=self.request.user)
-        print(queryset)
-        serializer = FollowGetSerializer(queryset, many=True)
-        return Response(serializer.data)
+        paginator = PageNumberPagination()
+        page_size = 10
+        paginator.page_size = page_size
+        result_page = paginator.paginate_queryset(queryset, request)
+        serializer = FollowGetSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
     
-
-            
+       
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -216,16 +217,17 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
     def get_recipe(self):
         recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
-        if ShoppingList.objects.filter(recipe_id__name=recipe):
-            return HttpResponse(status=400)
-        else:
-            return recipe
+        return recipe
     
     def retrieve(self, request, pk=None):
         queryset = self.get_recipe()
         return queryset
 
     def perform_create(self, serializer):
+        recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
+        print(recipe)
+        #if ShoppingList.objects.filter(recipe_id__name=recipe):
+            #return Response("Item already exists", status.HTTP_400_BAD_REQUEST)
         serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())
 
 

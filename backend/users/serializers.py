@@ -104,6 +104,15 @@ class FollowSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return FollowGetSerializer(instance).data
     
+
+class FollowRecipeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+    
 class FollowGetSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='following.email',)
     username = serializers.CharField(source='following.username',)
@@ -124,12 +133,12 @@ class FollowGetSerializer(serializers.ModelSerializer):
         if Follow.objects.filter(user=obj.user, following=obj.following):
             return True
 
-
-
     def get_recipes(self, obj):
         recipe = Recipe.objects.filter(author=obj.following)
-        return FavoriteSerializer(recipe, many=True).data
+        return FollowRecipeSerializer(recipe, many=True).data
     
     def get_recipes_count(self, obj):
         recipe = Recipe.objects.filter(author=obj.following)
         return recipe.count()
+
+

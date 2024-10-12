@@ -6,6 +6,7 @@ from recipe.models import Ingredient, Tag, Recipe, RecipeIngridient, RecipeTag, 
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from users import models as user_models
+from users.models import Follow
 
 
 
@@ -78,11 +79,21 @@ class RecipeSafeSerializer(serializers.ModelSerializer):
     author = UserSerializer()
     tags = TagSerializer(many=True)
     ingredients = IngridientAmountSerializer(many=True, source='recipe_ing')
+    is_favorited = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Recipe
-        fields = '__all__'
-        read_only_fields = ('author',)
+        fields = ('id', 'author', 'name', 'ingredients', 'tags', 'image', 'text', 'cooking_time', 'is_favorited', 'is_in_shopping_cart')
+        read_only_fields = ('author', 'is_favorited')
+
+    def get_is_favorited(self, obj):
+        user = self.context.get("user") 
+        print(obj.id)
+        print(RecipeUser.objects.filter(user_id=self.context['request'].user, recipe_id=obj.id))
+        if RecipeUser.objects.filter(user_id=obj.author, recipe_id=obj.id):
+            return True
+        else:
+            return False
 
 
 class RecipeUnSafeSerializer(serializers.ModelSerializer):
@@ -95,7 +106,7 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
         fields = ('name', 'ingredients', 'tags', 'image', 'text', 'cooking_time')
         extra_kwargs = {
             'ingredients': {'required': True, 'allow_empty': False},
-            'tags': {'required': True, 'allow_empty': False}
+            'tags': {'required': True, 'allow_empty': False},
             } 
         
     def to_representation(self, instance):
@@ -164,7 +175,6 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
     
 
 
-
 class RecipeImageSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=True, allow_null=True)
 
@@ -177,7 +187,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     cooking_time = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     class Meta:
-        model = Recipe
+        model = RecipeUser
         fields = ('id', 'name', 'image', 'cooking_time')
 
     def get_name(self, obj):
@@ -203,11 +213,9 @@ class FavoritePostSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        print(validated_data)
         user = validated_data.pop('user_id')
         recipe = validated_data.pop('recipe_id')
-        print(user)
-        print(recipe)
+
         if RecipeUser.objects.filter(user_id=user, recipe_id=recipe):
             raise serializers.ValidationError('You can add againg.')
         follow = RecipeUser.objects.create(user_id=user, recipe_id=recipe)
@@ -229,8 +237,15 @@ class ShoppingListSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return FavoriteSerializer(instance).data
     
+    def create(self, validated_data):
+        user = validated_data.pop('user_id')
+        recipe = validated_data.pop('recipe_id')
+        if ShoppingList.objects.filter(user_id=user, recipe_id=recipe):
+            raise serializers.ValidationError('You cannot add again.')
+        list = ShoppingList.objects.create(user_id=user, recipe_id=recipe)
+        return list
+    
     def validate(self, data):
-        print(data)
         return data
     
 

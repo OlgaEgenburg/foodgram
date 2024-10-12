@@ -111,7 +111,7 @@ class Recipe(models.Model):
         verbose_name='Ингридиенты',
         related_name='recipeingridient'
     )
-    is_favorited = models.BooleanField(default=False)
+    #is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
     image = models.ImageField('Фото', upload_to='recipe_images', blank=True,)
     text = models.TextField()
