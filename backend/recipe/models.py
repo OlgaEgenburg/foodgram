@@ -51,7 +51,7 @@ class RecipeIngridient(models.Model):
         blank=False,
         null=False,
         on_delete=models.CASCADE,
-        related_name='ingredient'
+        related_name='recipe_ingredients'
     )
     amount = models.SmallIntegerField()
 
@@ -109,9 +109,9 @@ class Recipe(models.Model):
         through=RecipeIngridient,
         blank=False,
         verbose_name='Ингридиенты',
-        related_name='recipeingridient'
+        related_name='recipes'
     )
-    #is_favorited = models.BooleanField(default=False)
+    is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
     image = models.ImageField('Фото', upload_to='recipe_images', blank=True,)
     text = models.TextField()
@@ -125,3 +125,4 @@ class Recipe(models.Model):
         if not len(value.ingridient_id) == 0:
             raise ValidationError(
             f'Год выпуска не может быть позднее {year_today}.')
+        

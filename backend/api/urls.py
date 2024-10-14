@@ -13,7 +13,7 @@ router_v1.register('ingredients', IngridientViewSet, basename='genres')
 #router_v1.register(r'users/(?P<user_id>\d+)/subscribe', FollowViewSet, basename='subscription')
 #router_v1.register('users/subscribtion', SubscriptionViewSet, basename='mysubscription')
 #router_v1.register('users/me/avatar', AvatarViewSet, basename='avatar')
-router_v1.register(r'recipes/(?P<recipe_id>\d+)/favorite', FavoriteViewSet, basename='favorite')
+#router_v1.register(r'recipes/(?P<recipe_id>\d+)/favorite', FavoriteViewSet, basename='favorite')
 router_v1.register(r'recipes/(?P<recipe_id>\d+)/shopping_cart', ShoppingListViewSet, basename='shopping-list')
 router_v1.register(r'recipes/(?P<recipe_id>\d+)/get-link', ShortLinkViewSet, basename='short-link')
 
@@ -28,6 +28,11 @@ urlpatterns = [
         'put': 'update',
         'delete': 'destroy'
     })),
-    
+    path('recipes/<int:recipe_id>/favorite/', FavoriteViewSet.as_view({
+        'get': 'retrieve',
+        'post': 'create',
+        'put': 'update',
+        'delete': 'destroy'
+    })),
     path('auth/', include('djoser.urls.authtoken'))
 ]

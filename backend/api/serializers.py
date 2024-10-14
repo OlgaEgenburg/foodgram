@@ -87,13 +87,11 @@ class RecipeSafeSerializer(serializers.ModelSerializer):
         read_only_fields = ('author', 'is_favorited')
 
     def get_is_favorited(self, obj):
-        user = self.context.get("user") 
-        print(obj.id)
-        print(RecipeUser.objects.filter(user_id=self.context['request'].user, recipe_id=obj.id))
-        if RecipeUser.objects.filter(user_id=obj.author, recipe_id=obj.id):
-            return True
-        else:
-            return False
+        #request = self.context.get('request')
+        #print(request)
+        #if RecipeUser.objects.filter(user_id=request.user, recipe_id=obj.id):
+        return True
+
 
 
 class RecipeUnSafeSerializer(serializers.ModelSerializer):
@@ -113,6 +111,8 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
         return RecipeSafeSerializer(instance).data
     
     def create(self, validated_data):
+        request = self.context.get('request')
+        user = request.user
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
@@ -134,15 +134,25 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
-        ingredients_data = validated_data.pop('ingredients')
-        lst = []
+
+        ingredients_data = validated_data.pop('ingredients', [])
+        print(ingredients_data)
+
         for ingredient in ingredients_data:
-            current_ingredient, status = Ingredient.objects.get_or_create(
-                **ingredient
-                )
-            lst.append(current_ingredient)
-        instance.ingredients.set(lst)
-        instance.ingredients.amount = 1
+            #current_ingredient, amount1 = Ingredient.objects.get_or_create(**ingredient)
+            #amount = ingredient.get('amount', 1)
+            current_ingredient = ingredient.pop('ingridient_id')
+            amount = ingredient.get('amount')
+            ingredient = Ingredient.objects.get(id=current_ingredient)
+            RecipeIngridient.objects.create(
+                recipe_id=instance,
+                ingridient_id=ingredient,
+                amount=amount
+            )
+            
+            #ingredient = Ingredient.objects.get(id=ingredient_id)
+            #RecipeIngredient.objects.create(recipe=instance, ingredient=ingredient, amount=amount)
+
         instance.save()
         return instance
     

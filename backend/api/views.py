@@ -59,14 +59,17 @@ class UserViewSet(UserViewSet):
         return Response(UserSerializer(request.user).data,
                         status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get',], url_path='subscriptions')
+    @action(detail=False, methods=['get',], url_path='subscriptions', pagination_class = LimitOffsetPagination)
     def subscriptions(self, request):
         queryset = Follow.objects.filter(user=self.request.user)
         paginator = PageNumberPagination()
+        #limit = self.request.query_params.get('limit')
         page_size = 10
         paginator.page_size = page_size
         result_page = paginator.paginate_queryset(queryset, request)
-        serializer = FollowGetSerializer(result_page, many=True)
+        serializer = FollowGetSerializer(result_page, context={'request': self.request}, many=True)
+
+        #return Response(serializer.data)
         return paginator.get_paginated_response(serializer.data)
     
        
@@ -95,8 +98,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeSafeSerializer
         return RecipeUnSafeSerializer
     
+    def get_serializer_context(self):
+        # Получаем контекст от родительского класса и добавляем текущий запрос
+        context = super().get_serializer_context()
+        context['request'] = self.request 
+        print(context) # добавляем текущий запрос
+        return context
+    
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, )
+
+    @action(detail=False, methods=['get',], url_path='shopping_cart', permission_classes=[IsAuthenticated])
+    def add_shopping_card(self, request):
+        
+    
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -129,6 +144,18 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())
+
+    def destroy(self, request, *args, **kwargs):
+        if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
+            return HttpResponse(status=404)
+        print(self.request.user)
+        print(self.kwargs.get('recipe_id'))
+        recipe = RecipeUser.objects.filter(user_id=self.request.user, recipe_id=self.kwargs.get('recipe_id'))
+        if not recipe.exists():
+            return HttpResponse(status=400)
+        else:
+            recipe.delete()
+            return HttpResponse(status=204)
 
 
 
@@ -166,7 +193,7 @@ class FollowViewSet(viewsets.ModelViewSet):
     
     def retrieve(self, request, pk=None):
         user = user_models.CustomUser.objects.filter(id=self.get_following())
-        serializer = FollowGetSerializer(user)
+        serializer = FollowSerializer(user, context=self.get_serializer_context())
         return Response(serializer.data)
 
     def perform_create(self, serializer,):
@@ -179,11 +206,21 @@ class FollowViewSet(viewsets.ModelViewSet):
         return FollowSerializer
     
     def destroy(self, request, *args, **kwargs):
-        #print(self.kwargs.get('user_id'))
-        user = get_object_or_404(Follow, following=self.kwargs.get('user_id'))
-        user.delete()
-        return HttpResponse(status=204)
-
+        if not get_object_or_404(CustomUser, id=self.kwargs.get('user_id')):
+            return HttpResponse(status=404)
+        user = Follow.objects.filter(user=self.request.user, following=self.kwargs.get('user_id'))
+        if not user.exists():
+            return HttpResponse(status=400)
+        else:
+            user.delete()
+            return HttpResponse(status=204)
+    
+    def get_serializer_context(self):
+        return {
+           'request': self.request,
+           'format': self.format_kwarg,
+           'view': self
+        }
     
 class SubscriptionViewSet(viewsets.ModelViewSet):
     queryset = Follow.objects.all()
@@ -192,7 +229,6 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     http_method_names = ['get',]
 
     def get_queryset(self, **kwargs):
-        print("hi")
         data = self.queryset.filter(user_id=self.request.user)
         print(data)
         return data
@@ -200,7 +236,6 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         queryset = Follow.objects.all()
         user = get_object_or_404(queryset, user_id=self.request.user)
-        print(user)
         serializer = FollowGetSerializer(user)
         return Response(serializer.data)
     
@@ -225,7 +260,6 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
-        print(recipe)
         #if ShoppingList.objects.filter(recipe_id__name=recipe):
             #return Response("Item already exists", status.HTTP_400_BAD_REQUEST)
         serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())

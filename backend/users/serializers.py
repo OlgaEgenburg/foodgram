@@ -102,7 +102,7 @@ class FollowSerializer(serializers.ModelSerializer):
         return follow
     
     def to_representation(self, instance):
-        return FollowGetSerializer(instance).data
+        return FollowGetSerializer(instance, context=self.context).data
     
 
 class FollowRecipeSerializer(serializers.ModelSerializer):
@@ -134,8 +134,18 @@ class FollowGetSerializer(serializers.ModelSerializer):
             return True
 
     def get_recipes(self, obj):
-        recipe = Recipe.objects.filter(author=obj.following)
-        return FollowRecipeSerializer(recipe, many=True).data
+        request = self.context
+        print(f'это контекст в serializer{request}')
+        if request is None:
+            print('Контекст не содержит request')
+        limit = self.context.get('request').query_params.get('recipes_limit')
+        recipe_queryset = Recipe.objects.filter(author=obj.following)
+        print(limit)
+        print(recipe_queryset)
+        if limit is not None:
+            recipe_queryset = recipe_queryset[:int(limit)]
+
+        return FollowRecipeSerializer(recipe_queryset, many=True).data
     
     def get_recipes_count(self, obj):
         recipe = Recipe.objects.filter(author=obj.following)
