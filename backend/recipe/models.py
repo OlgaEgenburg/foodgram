@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SHORT, MAX_LENGTH_NAME_ING, MAX_LENGTH_MEASUREMENT) 
+from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SHORT, MAX_LENGTH_NAME_ING, MAX_LENGTH_MEASUREMENT, CHARACTERS, LINK_LENGTH) 
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
+import random
 
 User = get_user_model()
 
@@ -90,7 +91,7 @@ class ShoppingList(models.Model):
         related_name='list_of_user'
     )
 
-
+    
 class Recipe(models.Model):
     name = models.CharField('Название блюда',
                             max_length=MAX_LENGTH_NAME)
@@ -116,6 +117,7 @@ class Recipe(models.Model):
     image = models.ImageField('Фото', upload_to='recipe_images', blank=True,)
     text = models.TextField()
     cooking_time = models.SmallIntegerField('Время приготовления', validators=[MinValueValidator(1)])
+    short_link = models.CharField(max_length=4, unique=True, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -126,3 +128,16 @@ class Recipe(models.Model):
             raise ValidationError(
             f'Год выпуска не может быть позднее {year_today}.')
         
+    def save(self, *args, **kwargs):
+        if not self.short_link:
+            self.short_link = self.generate_short_link()
+        super().save(*args, **kwargs)
+
+        
+    def generate_short_link(self):
+        existing_links = set(Recipe.objects.values_list('short_link', flat=True))
+        while True:
+            short_link = ''.join(random.choices(CHARACTERS, k=LINK_LENGTH))
+            if short_link not in existing_links:
+                break
+        return short_link

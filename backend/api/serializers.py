@@ -1,6 +1,6 @@
 
 import base64
-from rest_framework import serializers
+from rest_framework import serializers, status
 from recipe.models import Ingredient, Tag, Recipe, RecipeIngridient, RecipeTag, RecipeUser, ShoppingList
 #from users.serializers import UserSerializer
 from django.core.files.base import ContentFile
@@ -257,19 +257,3 @@ class ShoppingListSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         return data
-    
-
-
-class ShortLinkSerializer(serializers.ModelSerializer):
-    shortlink = serializers.SerializerMethodField()
-    class Meta:
-        model = Recipe
-        fields = ('shortlink',)
-
-    def get_shortlink(self, obj):
-        return obj.ingridient_id.name
-
-
-
-
-

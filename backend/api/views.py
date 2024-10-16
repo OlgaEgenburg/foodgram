@@ -1,3 +1,5 @@
+import os
+from django.http import FileResponse
 from rest_framework import filters, viewsets, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -5,7 +7,7 @@ from rest_framework import generics
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 from api.serializers import (FavoriteSerializer, TagSerializer,
-                             IngridientSerializer, RecipeSafeSerializer, ShortLinkSerializer, UserSerializer, RecipeUnSafeSerializer, FavoritePostSerializer, ShoppingListSerializer)
+                             IngridientSerializer, RecipeSafeSerializer, UserSerializer, RecipeUnSafeSerializer, FavoritePostSerializer, ShoppingListSerializer)
 from users.serializers import FollowSerializer, FollowGetSerializer
 from recipe.models import Ingredient, Tag, Recipe, RecipeUser, ShoppingList
 from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
@@ -23,6 +25,7 @@ from users.serializers import  UserSingupSerializer
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from django.core.files.base import ContentFile
 
 
 class UserViewSet(UserViewSet):
@@ -49,7 +52,6 @@ class UserViewSet(UserViewSet):
                                             data=request.data,)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        print(request.data)
         return Response(serializer.data)
 
     @action(detail=False,
@@ -85,12 +87,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get',], url_path='download_shopping_cart', permission_classes=[IsAuthenticated])
     def shopping_card(self, request):
-        queryset = ShoppingList.objects.get(user_id=self.request.user)
-        print(queryset)
-        file_handle = queryset.file.path
-        document = open(file_handle, 'rb')
-        response = HttpResponse(FileWrapper(document), content_type='application/msword')
-        response['Content-Disposition'] = 'attachment; filename="%s"' % queryset.file.name
+        shopping_list = ShoppingList.objects.get(user_id=request.user.id)
+        print(shopping_list)
+        #product_list = "\n".join([f"{item.recipe_id} x {item.recipe_id}" for item in shopping_list])
+        product_list = "hi"
+        file_content = ContentFile(product_list)
+        response = HttpResponse(file_content, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
         return response
 
     def get_serializer_class(self):
@@ -102,16 +105,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         # Получаем контекст от родительского класса и добавляем текущий запрос
         context = super().get_serializer_context()
         context['request'] = self.request 
-        print(context) # добавляем текущий запрос
         return context
     
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, )
 
-    @action(detail=False, methods=['get',], url_path='shopping_cart', permission_classes=[IsAuthenticated])
-    def add_shopping_card(self, request):
-        
-    
+    @action(detail=False, methods=['get',], url_path=r'(?P<recipe_id>\d+)/get-link')
+    def get_link(self, request, **kwargs):
+        recipe = Recipe.objects.filter(id=self.kwargs.get('recipe_id')).first()
+        if recipe is None:
+            return Response('Recipe not found', status=404)
+        short_link = f'https://mysite.com/{recipe.short_link}'
+        return Response({'short-link': short_link}) 
+
+
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -148,8 +155,6 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
             return HttpResponse(status=404)
-        print(self.request.user)
-        print(self.kwargs.get('recipe_id'))
         recipe = RecipeUser.objects.filter(user_id=self.request.user, recipe_id=self.kwargs.get('recipe_id'))
         if not recipe.exists():
             return HttpResponse(status=400)
@@ -264,15 +269,17 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
             #return Response("Item already exists", status.HTTP_400_BAD_REQUEST)
         serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())
 
+    def destroy(self, request, *args, **kwargs):
+        if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
+            return HttpResponse(status=404)
+        added_item = ShoppingList.objects.filter(user_id=self.request.user, recipe_id=self.kwargs.get('recipe_id'))
+        print(f'this is {added_item}')
+        if not added_item.exists():
+            return HttpResponse(status=400)
+        else:
+            added_item.delete()
+            return HttpResponse(status=204)
 
-class ShortLinkViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
-    serializer_class = ShortLinkSerializer
-    permission_classes = (AllowAny, )
-    http_method_names = ['get',]
-
-    def get_queryset(self, **kwargs):
-        return self.queryset.filter(user=self.request.user)
 
 
 class DownloadCartAPIView(generics.ListAPIView):

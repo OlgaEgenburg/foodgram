@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 from users.views import AvatarViewSet
-from .views import (IngridientViewSet, UserViewSet, TagViewSet, RecipeViewSet, FavoriteViewSet, FollowViewSet, SubscriptionViewSet, ShortLinkViewSet, ShoppingListViewSet)
+from .views import (IngridientViewSet, UserViewSet, TagViewSet, RecipeViewSet, FavoriteViewSet, FollowViewSet, SubscriptionViewSet, ShoppingListViewSet)
 from . import views
 
 router_v1 = routers.DefaultRouter()
@@ -14,8 +14,8 @@ router_v1.register('ingredients', IngridientViewSet, basename='genres')
 #router_v1.register('users/subscribtion', SubscriptionViewSet, basename='mysubscription')
 #router_v1.register('users/me/avatar', AvatarViewSet, basename='avatar')
 #router_v1.register(r'recipes/(?P<recipe_id>\d+)/favorite', FavoriteViewSet, basename='favorite')
-router_v1.register(r'recipes/(?P<recipe_id>\d+)/shopping_cart', ShoppingListViewSet, basename='shopping-list')
-router_v1.register(r'recipes/(?P<recipe_id>\d+)/get-link', ShortLinkViewSet, basename='short-link')
+#router_v1.register(r'recipes/(?P<recipe_id>\d+)/shopping_cart', ShoppingListViewSet, basename='shopping-list')
+#router_v1.register(r'recipes/(?P<recipe_id>\d+)/get-link', ShortLinkViewSet, basename='short-link')
 
 urlpatterns = [
     path('', include(router_v1.urls)),
@@ -29,6 +29,12 @@ urlpatterns = [
         'delete': 'destroy'
     })),
     path('recipes/<int:recipe_id>/favorite/', FavoriteViewSet.as_view({
+        'get': 'retrieve',
+        'post': 'create',
+        'put': 'update',
+        'delete': 'destroy'
+    })),
+    path('recipes/<int:recipe_id>/shopping_cart/', ShoppingListViewSet.as_view({
         'get': 'retrieve',
         'post': 'create',
         'put': 'update',
