@@ -1,9 +1,12 @@
-from rest_framework import serializers
-from users.models import CustomUser, Follow
-from users import models as user_models
 import base64
+
 from django.core.files.base import ContentFile
+
+from rest_framework import serializers
+
 from recipe.models import Recipe
+from users import models as user_models
+from users.models import Follow
 
 
 class Base64ImageField(serializers.ImageField):

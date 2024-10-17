@@ -1,25 +1,33 @@
-from rest_framework import filters, viewsets, status
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-#from rest_framework import generics
-from django.http import HttpResponse
-#from wsgiref.util import FileWrapper
-from api.serializers import (FavoriteSerializer, TagSerializer,
-                             IngridientSerializer, RecipeSafeSerializer, UserSerializer, RecipeUnSafeSerializer, FavoritePostSerializer, ShoppingListSerializer)
-from users.serializers import FollowSerializer, FollowGetSerializer
-from recipe.models import Ingredient, Tag, Recipe, RecipeUser, ShoppingList
-from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
-from recipe.filters import RecipeFilter
-from users.models import CustomUser, Follow
-from users.serializers import AvatarSerializer
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
-#from django.core.exceptions import ValidationError
-from users import models as user_models
-from djoser.views import UserViewSet
-from rest_framework.decorators import action
 from django.core.files.base import ContentFile
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+from api.serializers import (FavoritePostSerializer, FavoriteSerializer,
+                             IngridientSerializer, RecipeSafeSerializer,
+                             RecipeUnSafeSerializer, ShoppingListSerializer,
+                             TagSerializer, UserSerializer)
+from recipe.filters import RecipeFilter
+from recipe.models import Ingredient, Recipe, RecipeUser, ShoppingList, Tag
+from users import models as user_models
+from users.models import CustomUser, Follow
+from users.serializers import (AvatarSerializer, FollowGetSerializer,
+                               FollowSerializer)
+
+from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
+
+
+class CustomPagination(PageNumberPagination):
+    page_size_query_param = 'limit'
+    max_page_size = 100
 
 
 class UserViewSet(UserViewSet):
@@ -27,7 +35,9 @@ class UserViewSet(UserViewSet):
     pagination_class = LimitOffsetPagination
     serilizer_class = UserSerializer
 
-    @action(detail=False, methods=['put', 'delete'], url_path='me/avatar', serializer_class=AvatarSerializer, permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['put', 'delete'], url_path='me/avatar',
+            serializer_class=AvatarSerializer,
+            permission_classes=[IsAuthenticated])
     def avatar(self, request):
         if not request.data:
             if self.request.method == 'PUT':
@@ -51,9 +61,7 @@ class UserViewSet(UserViewSet):
     @action(detail=False, methods=['get',], url_path='subscriptions')
     def subscriptions(self, request):
         queryset = Follow.objects.filter(user=self.request.user)
-        paginator = PageNumberPagination()
-        page_size = 10
-        paginator.page_size = page_size
+        paginator = CustomPagination()
         result_page = paginator.paginate_queryset(queryset, request)
         serializer = FollowGetSerializer(result_page,
                                          context={'request': self.request},
@@ -68,28 +76,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     filterset_class = RecipeFilter
     pagination_class = LimitOffsetPagination
-    filterset_fields = ('author', 'tags') 
+    filterset_fields = ('author', 'tags')
 
-    @action(detail=False, methods=['get',], url_path='download_shopping_cart', permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get',], url_path='download_shopping_cart',
+            permission_classes=[IsAuthenticated])
+    # Не получается тут сделать итерацию верную, для получения ингредиентов.
     def shopping_card(self, request):
         shopping_list = ShoppingList.objects.get(user_id=request.user.id)
-        #product_list = "\n".join([f"{item.recipe_id} x {item.recipe_id}" for item in shopping_list])
-        product_list = "hi"
+        fields = shopping_list._meta.get_fields()
+        product_list = '\n'.join(str(field) for field in fields)
         file_content = ContentFile(product_list)
         response = HttpResponse(file_content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_cart.txt"'
+        )
         return response
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeSafeSerializer
         return RecipeUnSafeSerializer
-    
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['request'] = self.request 
+        context['request'] = self.request
         return context
-    
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, )
 
@@ -136,7 +148,9 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
             return HttpResponse(status=404)
-        recipe = RecipeUser.objects.filter(user_id=self.request.user, recipe_id=self.kwargs.get('recipe_id'))
+        recipe = RecipeUser.objects.filter(
+            user_id=self.request.user,
+            recipe_id=self.kwargs.get('recipe_id'))
         if not recipe.exists():
             return HttpResponse(status=400)
         else:
@@ -177,7 +191,7 @@ class FollowViewSet(viewsets.ModelViewSet):
     def get_following(self, **kwargs):
         return get_object_or_404(user_models.CustomUser,
                                  id=self.kwargs.get('user_id'))
-    
+
     def retrieve(self, request, pk=None):
         user = user_models.CustomUser.objects.filter(id=self.get_following())
         serializer = FollowSerializer(user,
@@ -187,12 +201,12 @@ class FollowViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer,):
         serializer.is_valid(raise_exception=True)
         serializer.save(user=self.request.user, following=self.get_following())
-    
+
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return FollowGetSerializer
         return FollowSerializer
-    
+
     def destroy(self, request, *args, **kwargs):
         if not get_object_or_404(CustomUser, id=self.kwargs.get('user_id')):
             return HttpResponse(status=404)
@@ -206,9 +220,9 @@ class FollowViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         return {
-           'request': self.request,
-           'format': self.format_kwarg,
-           'view': self
+            'request': self.request,
+            'format': self.format_kwarg,
+            'view': self
         }
 
 
@@ -248,14 +262,15 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-
-        serializer.save(user_id=self.request.user, recipe_id=self.get_recipe())
+        recipe = self.get_recipe()  # Получаем объект рецепта
+        serializer.save(user=self.request.user, recipe_id=recipe)
 
     def destroy(self, request, *args, **kwargs):
         if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
             return HttpResponse(status=404)
-        added_item = ShoppingList.objects.filter(user_id=self.request.user,
-                                                 recipe_id=self.kwargs.get('recipe_id'))
+        added_item = ShoppingList.objects.filter(
+            user_id=self.request.user,
+            recipe_id=self.kwargs.get('recipe_id'))
         if not added_item.exists():
             return HttpResponse(status=400)
         else:

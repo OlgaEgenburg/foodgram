@@ -1,8 +1,11 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SHORT, MAX_LENGTH_NAME_ING, MAX_LENGTH_MEASUREMENT, CHARACTERS, LINK_LENGTH) 
-from django.core.validators import MinValueValidator
 import random
+
+from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
+from django.db import models
+
+from .constants import (CHARACTERS, LINK_LENGTH, MAX_LENGTH_MEASUREMENT,
+                        MAX_LENGTH_NAME, MAX_LENGTH_NAME_ING, MAX_LENGTH_SHORT)
 
 User = get_user_model()
 
@@ -11,7 +14,7 @@ class Tag(models.Model):
     name = models.CharField('Название', max_length=MAX_LENGTH_SHORT)
     slug = models.SlugField(
         'Идентификатор', max_length=MAX_LENGTH_SHORT, unique=True)
-    
+
     def __str__(self):
         return self.name
 
@@ -20,7 +23,7 @@ class Ingredient(models.Model):
     name = models.CharField('Название игридиента',
                             max_length=MAX_LENGTH_NAME_ING)
     measurement_unit = models.CharField('Название',
-                                        max_length=MAX_LENGTH_MEASUREMENT)  
+                                        max_length=MAX_LENGTH_MEASUREMENT)
 
     def __str__(self):
         return self.name

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Tag, Ingredient, Recipe
+from .models import Ingredient, Recipe, Tag
+
 
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author')
@@ -14,10 +15,12 @@ class IngridientAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     empty_value_display = '-пусто-'
 
+
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')
     search_fields = ('name',)
     empty_value_display = '-пусто-'
+
 
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Ingredient, IngridientAdmin)

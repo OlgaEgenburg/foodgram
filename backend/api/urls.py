@@ -1,9 +1,10 @@
 from django.urls import include, path
-from rest_framework import routers
-from .views import (IngridientViewSet, UserViewSet, TagViewSet, RecipeViewSet,
-                    FavoriteViewSet, FollowViewSet, SubscriptionViewSet,
-                    ShoppingListViewSet)
 
+from rest_framework import routers
+
+from .views import (FavoriteViewSet, FollowViewSet, IngridientViewSet,
+                    RecipeViewSet, ShoppingListViewSet, TagViewSet,
+                    UserViewSet)
 
 router_v1 = routers.DefaultRouter()
 router_v1.register(r'users', UserViewSet, basename='users')
@@ -27,11 +28,11 @@ urlpatterns = [
         'put': 'update',
         'delete': 'destroy'
     })),
-    path('recipes/<int:recipe_id>/shopping_cart/', ShoppingListViewSet.as_view({
-        'get': 'retrieve',
-        'post': 'create',
-        'put': 'update',
-        'delete': 'destroy'
-    })),
+    path(
+        'recipes/<int:recipe_id>/shopping_cart/', ShoppingListViewSet.as_view({
+            'get': 'retrieve',
+            'post': 'create',
+            'put': 'update',
+            'delete': 'destroy'})),
     path('auth/', include('djoser.urls.authtoken'))
 ]

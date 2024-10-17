@@ -1,7 +1,9 @@
-from django_filters import rest_framework
 import django_filters
-from .models import Tag
+from django_filters import rest_framework
+
 from recipe.models import Recipe
+
+from .models import Tag
 
 
 class RecipeFilter(rest_framework.FilterSet):
@@ -13,7 +15,7 @@ class RecipeFilter(rest_framework.FilterSet):
     )
     is_in_shopping_cart = rest_framework.BooleanFilter(
         method='filter_shopping_cart'
-        )
+    )
     is_favorited = rest_framework.BooleanFilter(method='filter_is_favorite')
 
     class Meta:
@@ -23,11 +25,15 @@ class RecipeFilter(rest_framework.FilterSet):
     def filter_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if user.is_authenticated:
-            return queryset.filter(shopping_lists__user_id=user) if value else queryset.exclude(shopping_lists__user_id=user)
+            return queryset.filter(
+                shopping_lists__user_id=user
+            ) if value else queryset.exclude(shopping_lists__user_id=user)
         return queryset
 
     def filter_is_favorite(self, queryset, name, value):
         user = self.request.user
         if user.is_authenticated:
-            return queryset.filter(favorite__user_id=user) if value else queryset.exclude(favorite__user_id=user)
+            return queryset.filter(
+                favorite__user_id=user
+            ) if value else queryset.exclude(favorite__user_id=user)
         return queryset
