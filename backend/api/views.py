@@ -58,7 +58,7 @@ class UserViewSet(UserViewSet):
         return Response(UserSerializer(request.user).data,
                         status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get',], url_path='subscriptions')
+    @action(detail=False, methods=['get', ], url_path='subscriptions')
     def subscriptions(self, request):
         queryset = Follow.objects.filter(user=self.request.user)
         paginator = CustomPagination()
@@ -78,7 +78,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     filterset_fields = ('author', 'tags')
 
-    @action(detail=False, methods=['get',], url_path='download_shopping_cart',
+    @action(detail=False, methods=['get', ], url_path='download_shopping_cart',
             permission_classes=[IsAuthenticated])
     # Не получается тут сделать итерацию верную, для получения ингредиентов.
     # Не могу понять как это сделать.
@@ -106,7 +106,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, )
 
-    @action(detail=False, methods=['get',],
+    @action(detail=False, methods=['get', ],
             url_path=r'(?P<recipe_id>\d+)/get-link')
     def get_link(self, request, **kwargs):
         recipe = Recipe.objects.filter(id=self.kwargs.get('recipe_id')).first()
@@ -165,7 +165,7 @@ class IngridientViewSet(viewsets.ModelViewSet):
     serializer_class = IngridientSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, )
-    filterset_fields = ['name',]
+    filterset_fields = ['name', ]
     http_method_names = ['get']
 
     def get_paginated_response(self, data):
@@ -231,7 +231,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     queryset = Follow.objects.all()
     serializer_class = FollowGetSerializer
     permission_classes = (AllowAny, )
-    http_method_names = ['get',]
+    http_method_names = ['get', ]
 
     def get_queryset(self, **kwargs):
         data = self.queryset.filter(user_id=self.request.user)
