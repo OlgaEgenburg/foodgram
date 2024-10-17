@@ -81,6 +81,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get',], url_path='download_shopping_cart',
             permission_classes=[IsAuthenticated])
     # Не получается тут сделать итерацию верную, для получения ингредиентов.
+    # Не могу понять как это сделать.
     def shopping_card(self, request):
         shopping_list = ShoppingList.objects.get(user_id=request.user.id)
         fields = shopping_list._meta.get_fields()
