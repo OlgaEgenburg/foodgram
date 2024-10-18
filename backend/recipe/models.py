@@ -15,15 +15,23 @@ class Tag(models.Model):
     slug = models.SlugField(
         'Идентификатор', max_length=MAX_LENGTH_SHORT, unique=True)
 
+    class Meta:
+        verbose_name = 'Тэг'
+        verbose_name_plural = 'Тэги'
+
     def __str__(self):
         return self.name
 
 
 class Ingredient(models.Model):
     name = models.CharField('Название игридиента',
-                            max_length=MAX_LENGTH_NAME_ING)
+                            max_length=MAX_LENGTH_NAME_ING, unique=True)
     measurement_unit = models.CharField('Название',
                                         max_length=MAX_LENGTH_MEASUREMENT)
+  
+    class Meta:
+        verbose_name = 'Игредиент'
+        verbose_name_plural = 'Игредиенты'
 
     def __str__(self):
         return self.name
@@ -32,13 +40,11 @@ class Ingredient(models.Model):
 class RecipeTag(models.Model):
     recipe_id = models.ForeignKey(
         'Recipe',
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
     )
     tag_id = models.ForeignKey(
         Tag,
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
     )
@@ -47,54 +53,71 @@ class RecipeTag(models.Model):
 class RecipeIngridient(models.Model):
     recipe_id = models.ForeignKey(
         'Recipe',
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='recipe_ing'
     )
     ingridient_id = models.ForeignKey(
         Ingredient,
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='recipe_ingredients'
     )
     amount = models.SmallIntegerField()
 
+    class Meta:
+        verbose_name = 'Рецепт-игредиент'
+        verbose_name_plural = 'Рецепты-игредиенты'
+
+    def __str__(self): 
+
+        return self.recipe_id
+
 
 class RecipeUser(models.Model):
     recipe_id = models.ForeignKey(
         'Recipe',
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='favorite'
     )
     user_id = models.ForeignKey(
         User,
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='favorite'
     )
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+
+    def __str__(self): 
+
+        return self.recipe_id
 
 
 class ShoppingList(models.Model):
     recipe_id = models.ForeignKey(
         'Recipe',
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='shopping_lists'
     )
     user_id = models.ForeignKey(
         User,
-        blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='shopping_lists'
     )
 
+    def __str__(self): 
+
+        return self.recipe_id
+    
+    class Meta:
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'
 
 class Recipe(models.Model):
     name = models.CharField('Название блюда',
@@ -106,13 +129,11 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         through=RecipeTag,
-        blank=False,
         verbose_name='Тэги',
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through=RecipeIngridient,
-        blank=False,
         verbose_name='Ингридиенты',
         related_name='recipes'
     )
@@ -124,6 +145,10 @@ class Recipe(models.Model):
                                             validators=[MinValueValidator(1)])
     short_link = models.CharField(max_length=4, unique=True,
                                   blank=True, null=True)
+    
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
 
     def __str__(self):
         return self.name

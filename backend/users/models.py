@@ -4,7 +4,7 @@ from django.db import models
 from .constants import MAX_LENGTH_EMAIL, MAX_LENGTH_NAME
 
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_NAME, unique=True,
                                 verbose_name='Логин пользователя')
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL,
@@ -22,6 +22,9 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+    
+    def __str__(self):
+        return self.email
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'password')
@@ -29,6 +32,13 @@ class CustomUser(AbstractUser):
 
 class Follow(models.Model):
     user = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name='follower')
+        User, on_delete=models.CASCADE, related_name='follower')
     following = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name='following')
+        User, on_delete=models.CASCADE, related_name='following')
+    
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+    
+    def __str__(self):
+        return self.following

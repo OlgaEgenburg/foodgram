@@ -18,22 +18,18 @@ from api.serializers import (FavoritePostSerializer, FavoriteSerializer,
 from recipe.filters import RecipeFilter
 from recipe.models import Ingredient, Recipe, RecipeUser, ShoppingList, Tag
 from users import models as user_models
-from users.models import CustomUser, Follow
+from users.models import User, Follow
 from users.serializers import (AvatarSerializer, FollowGetSerializer,
                                FollowSerializer)
 
+from .pagination import CustomPagination
 from .permissions import IsAdminOrAuthorOrReadOnly, IsAdminOrReadOnly
 
 
-class CustomPagination(PageNumberPagination):
-    page_size_query_param = 'limit'
-    max_page_size = 100
-
-
 class UserViewSet(UserViewSet):
-    queryset = user_models.CustomUser.objects.all()
+    queryset = user_models.User.objects.all()
     pagination_class = LimitOffsetPagination
-    serilizer_class = UserSerializer
+    serializer_class = UserSerializer
 
     @action(detail=False, methods=['put', 'delete'], url_path='me/avatar',
             serializer_class=AvatarSerializer,
@@ -42,7 +38,7 @@ class UserViewSet(UserViewSet):
         if not request.data:
             if self.request.method == 'PUT':
                 return HttpResponse(status=400)
-            user = get_object_or_404(CustomUser, email=request.user)
+            user = get_object_or_404(User, email=request.user)
             user.avatar.delete()
             user.save
             return HttpResponse(status=204)
@@ -58,7 +54,7 @@ class UserViewSet(UserViewSet):
         return Response(UserSerializer(request.user).data,
                         status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get', ], url_path='subscriptions')
+    @action(detail=False, methods=['get'], url_path='subscriptions')
     def subscriptions(self, request):
         queryset = Follow.objects.filter(user=self.request.user)
         paginator = CustomPagination()
@@ -78,7 +74,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     filterset_fields = ('author', 'tags')
 
-    @action(detail=False, methods=['get', ], url_path='download_shopping_cart',
+    @action(detail=False, methods=['get'], url_path='download_shopping_cart',
             permission_classes=[IsAuthenticated])
     # Не получается тут сделать итерацию верную, для получения ингредиентов.
     # Не могу понять как это сделать.
@@ -106,7 +102,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, )
 
-    @action(detail=False, methods=['get', ],
+    @action(detail=False, methods=['get'],
             url_path=r'(?P<recipe_id>\d+)/get-link')
     def get_link(self, request, **kwargs):
         recipe = Recipe.objects.filter(id=self.kwargs.get('recipe_id')).first()
@@ -153,10 +149,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             user_id=self.request.user,
             recipe_id=self.kwargs.get('recipe_id'))
         if not recipe.exists():
-            return HttpResponse(status=400)
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         else:
             recipe.delete()
-            return HttpResponse(status=204)
+            return HttpResponse(status=status.HTTP_204_NO_CONTENT)
 
 
 class IngridientViewSet(viewsets.ModelViewSet):
@@ -172,29 +168,18 @@ class IngridientViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-class AvatarViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
-    serializer_class = AvatarSerializer
-    permission_classes = (IsAuthenticated, )
-    http_method_names = ['put', 'delete']
-    lookup_fields = ['avatar', ]
-
-    def get_object(self):
-        user = get_object_or_404(CustomUser, id=self.request.user.id)
-        return user
-
 
 class FollowViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     permission_classes = (IsAuthenticated, )
     http_method_names = ['get', 'post', 'delete']
 
     def get_following(self, **kwargs):
-        return get_object_or_404(user_models.CustomUser,
+        return get_object_or_404(user_models.User,
                                  id=self.kwargs.get('user_id'))
 
     def retrieve(self, request, pk=None):
-        user = user_models.CustomUser.objects.filter(id=self.get_following())
+        user = user_models.User.objects.filter(id=self.get_following())
         serializer = FollowSerializer(user,
                                       context=self.get_serializer_context())
         return Response(serializer.data)
@@ -209,15 +194,15 @@ class FollowViewSet(viewsets.ModelViewSet):
         return FollowSerializer
 
     def destroy(self, request, *args, **kwargs):
-        if not get_object_or_404(CustomUser, id=self.kwargs.get('user_id')):
-            return HttpResponse(status=404)
+        if not get_object_or_404(User, id=self.kwargs.get('user_id')):
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
         user = Follow.objects.filter(user=self.request.user,
                                      following=self.kwargs.get('user_id'))
         if not user.exists():
-            return HttpResponse(status=400)
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         else:
             user.delete()
-            return HttpResponse(status=204)
+            return HttpResponse(status=status.HTTP_204_NO_CONTENT)
 
     def get_serializer_context(self):
         return {
@@ -231,7 +216,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     queryset = Follow.objects.all()
     serializer_class = FollowGetSerializer
     permission_classes = (AllowAny, )
-    http_method_names = ['get', ]
+    http_method_names = ['get']
 
     def get_queryset(self, **kwargs):
         data = self.queryset.filter(user_id=self.request.user)
@@ -268,12 +253,12 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
-            return HttpResponse(status=404)
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
         added_item = ShoppingList.objects.filter(
             user_id=self.request.user,
             recipe_id=self.kwargs.get('recipe_id'))
         if not added_item.exists():
-            return HttpResponse(status=400)
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         else:
             added_item.delete()
-            return HttpResponse(status=204)
+            return HttpResponse(status=status.HTTP_204_NO_CONTENT)

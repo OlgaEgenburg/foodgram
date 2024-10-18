@@ -23,7 +23,7 @@ class AvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True)
 
     class Meta:
-        model = user_models.CustomUser
+        model = user_models.User
         fields = (
             'avatar',
         )
@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True, allow_null=True)
 
     class Meta:
-        model = user_models.CustomUser
+        model = user_models.User
         fields = (
             'id', 'username', 'email', 'first_name',
             'last_name', 'is_subscribed', 'avatar'
@@ -95,17 +95,19 @@ class FollowGetSerializer(serializers.ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        if Follow.objects.filter(user=obj.user, following=obj.following):
+        if Follow.objects.filter(user=obj.user,
+                                 following=obj.following).exists():
             return True
+        return False
 
     def get_recipes(self, obj):
-        request = self.context
-        if request is None:
-            print('Контекст не содержит request')
         limit = self.context.get('request').query_params.get('recipes_limit')
         recipe_queryset = Recipe.objects.filter(author=obj.following)
         if limit is not None:
-            recipe_queryset = recipe_queryset[:int(limit)]
+            if int(limit):
+                recipe_queryset = recipe_queryset[:int(limit)]
+            else:
+                raise serializers.ValidationError('Provide integer for limit.')
         return FollowRecipeSerializer(recipe_queryset, many=True).data
 
     def get_recipes_count(self, obj):

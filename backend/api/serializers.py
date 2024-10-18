@@ -68,7 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True, allow_null=True)
 
     class Meta:
-        model = user_models.CustomUser
+        model = user_models.User
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name',
             'is_subscribed', 'avatar'
@@ -91,7 +91,6 @@ class RecipeSafeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
-        print(request)
         if RecipeUser.objects.filter(user_id=request.user.id,
                                      recipe_id=obj.id):
             return True
@@ -171,7 +170,7 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Ingredients are nessecery')
         for tag in (self.initial_data['tags']):
             if tag in tag_list:
-                raise serializers.ValidationError('Ingredient already in list')
+                raise serializers.ValidationError('Tag has already in list')
             tag_list.append(tag)
         if len(self.initial_data['tags']) == 0:
             raise serializers.ValidationError('Add tags')
@@ -264,5 +263,3 @@ class ShoppingListSerializer(serializers.ModelSerializer):
         list = ShoppingList.objects.create(user_id=user, recipe_id=recipe)
         return list
 
-    def validate(self, data):
-        return data
