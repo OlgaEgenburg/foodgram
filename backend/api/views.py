@@ -115,7 +115,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, **kwargs):
         recipe = Recipe.objects.filter(id=self.kwargs.get('recipe_id')).first()
         if recipe is None:
-            return Response('Recipe not found', status=status.HTTP_404_NOT_FOUND)
+            return Response('Recipe not found',
+                            status=status.HTTP_404_NOT_FOUND)
         short_link = f'https://mysite.com/{recipe.short_link}'
         return Response({'short-link': short_link})
 
