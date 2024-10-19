@@ -38,11 +38,11 @@ class UserViewSet(UserViewSet):
     def avatar(self, request):
         if not request.data:
             if self.request.method == 'PUT':
-                return HttpResponse(status=400)
+                return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
             user = get_object_or_404(User, email=request.user)
             user.avatar.delete()
             user.save
-            return HttpResponse(status=204)
+            return HttpResponse(status=status.HTTP_204_NO_CONTENT)
         serializer = AvatarSerializer(request.user, data=request.data,)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -115,7 +115,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, **kwargs):
         recipe = Recipe.objects.filter(id=self.kwargs.get('recipe_id')).first()
         if recipe is None:
-            return Response('Recipe not found', status=404)
+            return Response('Recipe not found', status=status.HTTP_404_NOT_FOUND)
         short_link = f'https://mysite.com/{recipe.short_link}'
         return Response({'short-link': short_link})
 
@@ -152,7 +152,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         if not get_object_or_404(Recipe, id=self.kwargs.get('recipe_id')):
-            return HttpResponse(status=404)
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
         recipe = RecipeUser.objects.filter(
             user=self.request.user,
             recipe=self.kwargs.get('recipe_id'))
