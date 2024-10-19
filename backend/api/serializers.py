@@ -4,8 +4,8 @@ from django.core.files.base import ContentFile
 
 from rest_framework import serializers
 
-from recipe.models import (Ingredient, Recipe, RecipeIngredient, RecipeTag,
-                           RecipeUser, ShoppingList, Tag)
+from recipe.models import (Ingredient, Recipe, RecipeIngredient, RecipeUser,
+                           ShoppingList, Tag)
 from users import models as user_models
 from users.models import Follow
 
@@ -80,7 +80,7 @@ class UserSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         if Follow.objects.filter(user=request.user.id,
-                                     following=obj.id):
+                                 following=obj.id):
             return True
         return False
 
@@ -138,19 +138,21 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        for ingredient in ingredients:
-            ing = int(list(ingredient.values())[0])
-            amount = int(list(ingredient.values())[1])
-            current_ingredient = Ingredient.objects.get(id=ing)
+        for ingredient_data in ingredients:
+            ingredient_id = ingredient_data['ingredient']
+            amount = ingredient_data['amount']
+            try:
+                current_ingredient = Ingredient.objects.get(id=ingredient_id)
+            except Ingredient.DoesNotExist:
+                raise serializers.ValidationError('Ingredient does not exist')
             RecipeIngredient.objects.create(
                 ingredient=current_ingredient,
-                recipe=recipe, amount=amount
+                recipe=recipe,
+                amount=amount
             )
         for tag in tags:
             current_tag = Tag.objects.get(name=tag)
-            RecipeTag.objects.create(
-                tag=current_tag, recipe=recipe
-            )
+            recipe.tags.add(current_tag)
         return recipe
 
     def update(self, instance, validated_data):
@@ -272,4 +274,3 @@ class ShoppingListSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('You cannot add again.')
         list = ShoppingList.objects.create(user=user, recipe=recipe)
         return list
-

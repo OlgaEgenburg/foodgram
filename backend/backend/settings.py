@@ -1,6 +1,6 @@
+import os
 from pathlib import Path
 
-import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -143,9 +143,5 @@ DJOSER = {
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],
         'user': ['rest_framework.permissions.AllowAny'],
-    },
-    'SERIALIZERS': {
-        #'user': 'users.serializers.UserSerializer',
-        #'current_user': 'users.serializers.UserSerializer',
     },
 }

@@ -1,4 +1,5 @@
 from django.core.files.base import ContentFile
+from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
@@ -6,8 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import (LimitOffsetPagination,
-                                       PageNumberPagination)
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -16,9 +16,10 @@ from api.serializers import (FavoritePostSerializer, FavoriteSerializer,
                              RecipeUnSafeSerializer, ShoppingListSerializer,
                              TagSerializer, UserSerializer)
 from recipe.filters import RecipeFilter
-from recipe.models import Ingredient, Recipe, RecipeUser, ShoppingList, Tag
+from recipe.models import (Ingredient, Recipe, RecipeIngredient, RecipeUser,
+                           ShoppingList, Tag)
 from users import models as user_models
-from users.models import User, Follow
+from users.models import Follow, User
 from users.serializers import (AvatarSerializer, FollowGetSerializer,
                                FollowSerializer)
 
@@ -51,7 +52,8 @@ class UserViewSet(UserViewSet):
             methods=['GET'],
             permission_classes=[IsAuthenticated])
     def me(self, request):
-        return Response(UserSerializer(request.user, context={'request': self.request}).data,
+        return Response(UserSerializer(request.user,
+                                       context={'request': self.request}).data,
                         status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='subscriptions')
@@ -64,9 +66,11 @@ class UserViewSet(UserViewSet):
                                          many=True)
         return paginator.get_paginated_response(serializer.data)
 
+
 def get_card(request):
     return ShoppingList.objects.get(user=request.user.id)
-    
+
+
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
@@ -78,17 +82,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='download_shopping_cart',
             permission_classes=[IsAuthenticated])
-    # Не получается тут сделать итерацию верную, для получения ингредиентов.
-    # Не могу понять как это сделать.
     def shopping_card(self, request):
-        shopping_list = get_card(request)
-        fields = shopping_list._meta.get_fields()
-        product_list = '\n'.join(str(field) for field in fields)
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__shopping_lists__user=request.user).values(
+            'ingredient__name').annotate(total_amount=models.Sum('amount'))
+        product_lines = [
+            f"{ingredient['ingredient__name']}: {ingredient['total_amount']}"
+            for ingredient in ingredients
+        ]
+
+        product_list = '\n'.join(product_lines)
         file_content = ContentFile(product_list)
         response = HttpResponse(file_content, content_type='text/plain')
-        response['Content-Disposition'] = (
-            'attachment; filename="shopping_cart.txt"'
-        )
+        response['Content-Disposition'] = 'attachment; filename="cart.txt"'
         return response
 
     def get_serializer_class(self):
@@ -170,7 +176,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-
 class FollowViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated, )
@@ -250,7 +255,7 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        recipe = self.get_recipe()  # Получаем объект рецепта
+        recipe = self.get_recipe()
         serializer.save(user=self.request.user, recipe=recipe)
 
     def destroy(self, request, *args, **kwargs):
