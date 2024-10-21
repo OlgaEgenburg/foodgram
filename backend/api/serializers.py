@@ -195,7 +195,7 @@ class RecipeUnSafeSerializer(serializers.ModelSerializer):
             if (ingredient['id']) < 1:
                 raise serializers.ValidationError(
                     'No permission added for a ingredient')
-            if (ingredient['amount']) < 1:
+            if (int(ingredient['amount'])) < 1:
                 raise serializers.ValidationError('Not enough for cooking')
             if (ingredient['id']) in ing_list:
                 raise serializers.ValidationError('Ingredient already in list')
