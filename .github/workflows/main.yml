@@ -79,7 +79,7 @@ jobs:
           push: true
           tags: olgaegenburg/foodgram_frontend:latest
   build_gateway_and_push_to_docker_hub:
-    name: Push gateway image to DockerHub
+    name: Push gateway Docker image to DockerHub
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
