@@ -151,3 +151,8 @@ DJOSER = {
         'user': ['rest_framework.permissions.AllowAny'],
     },
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://foodgram-olga.hopto.org',
+    'https://www.foodgram-olga.hopto.org',
+]
