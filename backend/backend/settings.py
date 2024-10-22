@@ -14,7 +14,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'any_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'any')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'foodgram-olga.hopto.org']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'foodgram-olga.hopto.org',
+                 '89.169.175.57']
 
 
 # Application definition
