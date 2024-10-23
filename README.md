@@ -88,7 +88,7 @@ Response example:
 Эгенбург Ольга
 Проект размещен на: https://foodgram-olga.hopto.org/
 
-### Локально админка работала, на сервере при вбивании данных для входа и нажатии кнопки log in выскакивает ошибка 403 CSRF verification failed. Request aborted.
+
 Данные для входа в админку
 логин: olga@mail.ru
 пароль: admin

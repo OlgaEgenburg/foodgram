@@ -117,7 +117,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if recipe is None:
             return Response('Recipe not found',
                             status=status.HTTP_404_NOT_FOUND)
-        short_link = f'https://mysite.com/{recipe.short_link}'
+        short_link = f'https://foodgram-olga.hopto.org//{recipe.short_link}'
         return Response({'short-link': short_link})
 
 
