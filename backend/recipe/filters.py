@@ -1,9 +1,9 @@
 import django_filters
-from django_filters import rest_framework
+from django_filters import rest_framework, FilterSet, CharFilter
 
 from recipe.models import Recipe
 
-from .models import Tag
+from .models import Ingredient, Tag
 
 
 class RecipeFilter(rest_framework.FilterSet):
@@ -37,3 +37,11 @@ class RecipeFilter(rest_framework.FilterSet):
                 favorite__user_id=user
             ) if value else queryset.exclude(favorite__user_id=user)
         return queryset
+
+
+class IngredientFilter(FilterSet):
+    name = CharFilter(field_name='name', lookup_expr='startswith')
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
