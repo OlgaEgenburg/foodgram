@@ -15,7 +15,7 @@ from api.serializers import (FavoritePostSerializer, FavoriteSerializer,
                              IngredientSerializer, RecipeSafeSerializer,
                              RecipeUnSafeSerializer, ShoppingListSerializer,
                              TagSerializer, UserSerializer)
-from recipe.filters import RecipeFilter, IngredientFilter
+from recipe.filters import IngredientFilter, RecipeFilter
 from recipe.models import (Ingredient, Recipe, RecipeIngredient, RecipeUser,
                            ShoppingList, Tag)
 from users import models as user_models
@@ -169,7 +169,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filterset_class = RecipeFilter
+    filterset_class = IngredientFilter
     filter_backends = (DjangoFilterBackend, )
     http_method_names = ['get']
 
