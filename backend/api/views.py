@@ -169,8 +169,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filterset_class = IngredientFilter
     filter_backends = (DjangoFilterBackend, )
+    filterset_class = IngredientFilter
     http_method_names = ['get']
 
     def get_paginated_response(self, data):
