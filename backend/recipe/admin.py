@@ -4,13 +4,13 @@ from .models import Ingredient, Recipe, Tag
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author')
+    list_display = ('name', 'author', 'favorite_count')
     search_fields = ('name', 'author')
     list_filter = ('tags',)
     empty_value_display = '-пусто-'
 
     @admin.display(description='Количество добавлений в избранное')
-    def subscribing_count(self, obj):
+    def favorite_count(self, obj):
         return obj.favorite.count()
 
 
