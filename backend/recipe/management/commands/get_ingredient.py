@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Загрузка всех ингредиентов в базу из ingredients.csv.'
 
     def handle(self, *args, **kwargs):
-        file_path = '../data/ingredients.csv'
+        file_path = 'data/ingredients.csv'
         ingredients_to_create = []
         with open(file_path, mode='r', encoding='utf-8') as csv_file:
             csv_reader = csv.reader(csv_file)
