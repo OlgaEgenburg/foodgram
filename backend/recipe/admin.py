@@ -9,6 +9,10 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('tags',)
     empty_value_display = '-пусто-'
 
+    @admin.display(description='Количество добавлений в избранное')
+    def subscribing_count(self, obj):
+        return obj.favorite.count()
+
 
 class IngridientAdmin(admin.ModelAdmin):
     list_display = ('name', 'measurement_unit')
