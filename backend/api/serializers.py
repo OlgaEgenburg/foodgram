@@ -11,6 +11,7 @@ from users.models import Follow
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериалайзет тэгов."""
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
